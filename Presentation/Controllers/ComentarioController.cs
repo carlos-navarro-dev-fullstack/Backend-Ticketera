@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Sistema_tickets_api.Application.Mappers;
 using Sistema_tickets_api.Application.Services;
 using Sistema_tickets_api.Core.Entities;
@@ -8,11 +9,12 @@ namespace Sistema_tickets_api.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ComentariosController : ControllerBase
+        [Authorize]
+    public class ComentarioController : ControllerBase
     {
         private readonly ComentarioService _service;
 
-        public ComentariosController(ComentarioService service)
+        public ComentarioController(ComentarioService service)
         {
             _service = service;
         }
@@ -36,13 +38,33 @@ namespace Sistema_tickets_api.Api.Controllers
             return Ok(comentario.ToDTO());
         }
 
-       
+        [HttpGet("ticket/{ticketId}")]
+        public IActionResult GetByTicket(int ticketId)
+        {
+            return Ok(_service.ObtenerPorTicket(ticketId));
+        }
+
         [HttpPost]
         public IActionResult Create([FromBody] Comentario comentario)
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null)
+                return Unauthorized();
+
+            // asignar usuario logueado
+            comentario.UsuarioId = int.Parse(userId);
+
+            // fecha
             comentario.FechaCreacion = DateTime.Now;
+
             _service.Crear(comentario);
-            return Ok(new { message = "Comentario creado correctamente", comentario = comentario.ToDTO() });
+
+            return Ok(new
+            {
+                message = "Comentario creado correctamente",
+                comentario = comentario.ToDTO()
+            });
         }
 
        

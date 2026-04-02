@@ -1,4 +1,5 @@
-﻿using Sistema_tickets_api.Core.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Sistema_tickets_api.Core.Entities;
 using Sistema_tickets_api.Core.Interfaces;
 using Sistema_tickets_api.Infraestructure.Data;
 
@@ -26,6 +27,23 @@ namespace Sistema_tickets_api.Application.Services
         {
             return _context.Comentarios
                            .FirstOrDefault(c => c.Id == id);
+        }
+
+        public IEnumerable<object> ObtenerPorTicket(int ticketId)
+        {
+            return _context.Comentarios
+                .Include(c => c.Usuario)
+                .Where(c => c.TicketId == ticketId)
+                .OrderBy(c => c.FechaCreacion)
+                .Select(c => new {
+                    c.Id,
+                    c.Texto,
+                    c.FechaCreacion,
+                    UsuarioNombre = c.Usuario != null
+                        ? c.Usuario.Nombre
+                        : "Usuario" 
+                })
+                .ToList();
         }
 
         // Crear un comentario
